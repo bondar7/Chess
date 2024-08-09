@@ -3,6 +3,7 @@ package main;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.swing.JPanel;
 
@@ -14,6 +15,7 @@ public class GamePanel extends JPanel{
 	final int FPS = 60;
 	Thread gameThread;
 	Runnable runnable;
+	Board board = new Board();
 	
 	GamePanel() {
 		setPreferredSize(new Dimension(WIDTH,HEIGHT));
@@ -58,6 +60,10 @@ public class GamePanel extends JPanel{
 	
 	public void paintComponent( Graphics g) {
 		super.paintComponent(g);
+		
+		Graphics2D g2d = (Graphics2D) g;
+		
+		board.draw(g2d);
 	}
 
 }
