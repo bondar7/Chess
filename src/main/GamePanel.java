@@ -33,6 +33,7 @@ public class GamePanel extends JPanel {
 	public static ArrayList<Piece> pieces = new ArrayList<>();
 	public static ArrayList<Piece> simPieces = new ArrayList<>();
 	Piece activeP;
+	public static Piece castlingP;
 
 	// COLOR
 	public static final int WHITE = 0;
@@ -101,8 +102,8 @@ public class GamePanel extends JPanel {
 		pieces.add(new Knight(WHITE, 6, 7));
 		pieces.add(new Bishop(WHITE, 2, 7));
 		pieces.add(new Bishop(WHITE, 5, 7));
-		pieces.add(new Queen(WHITE, 4, 4));
-		pieces.add(new King(WHITE, 3, 7));
+		pieces.add(new Queen(WHITE, 3, 7));
+		pieces.add(new King(WHITE, 4, 7));
 
 		// Black team
 		// Adding pawns
@@ -117,8 +118,8 @@ public class GamePanel extends JPanel {
 		pieces.add(new Knight(BLACK, 6, 0));
 		pieces.add(new Bishop(BLACK, 2, 0));
 		pieces.add(new Bishop(BLACK, 5, 0));
-		pieces.add(new Queen(BLACK, 4, 0));
-		pieces.add(new King(BLACK, 3, 0));
+		pieces.add(new Queen(BLACK, 3, 0));
+		pieces.add(new King(BLACK, 4, 0));
 	}
 
 	private void copyPieces(ArrayList<Piece> source, ArrayList<Piece> target) {
@@ -151,11 +152,19 @@ public class GamePanel extends JPanel {
 		if (mouse.pressed == false) {
 			if (activeP != null) {
 				if (isValidSquare) {
+					
 					// MOVE CONFIRMED
+					
+					
 					// Update the piece list in case a piece has been captured and removed during
 					// the simulation
 					copyPieces(simPieces, pieces);
 					activeP.updatePosition();
+					
+					if (castlingP != null) {
+						castlingP.updatePosition();
+					}
+					
 					changePlayer();
 				} else {
 					// The move is not valid so reset everything
@@ -167,14 +176,6 @@ public class GamePanel extends JPanel {
 		}
 	}
 
-	private void changePlayer() {
-		if (currentColor == WHITE) {
-			currentColor = BLACK;
-		} else {
-			currentColor = WHITE;
-		}
-		activeP = null;
-	}
 
 	private void simulate() {
 
@@ -184,6 +185,13 @@ public class GamePanel extends JPanel {
 		// Reset the piece list in every loop
 		// This is basically for restoring the removed piece during the simulation
 		copyPieces(pieces, simPieces);
+		
+		// Reset the castling piece's position
+		if (castlingP != null) {
+			castlingP.col = castlingP.preCol;
+			castlingP.x = castlingP.getX(castlingP.col);
+			castlingP = null;
+		}
 
 		// If a piece is being held, update its position
 		activeP.x = mouse.x - Board.HALF_SQUARE_SIZE;
@@ -199,11 +207,35 @@ public class GamePanel extends JPanel {
 			if (activeP.hittingP != null) {
 				simPieces.remove(activeP.hittingP);
 			}
+			
+			checkCastling();
 
 			isValidSquare = true;
 		}
 	}
 
+	private void changePlayer() {
+		if (currentColor == WHITE) {
+			currentColor = BLACK;
+		} else {
+			currentColor = WHITE;
+		}
+		activeP = null;
+	}
+	
+	private void checkCastling() {
+		if (castlingP != null) {
+			if (castlingP.col == 0) {
+				castlingP.col += 3;
+			}
+			else if (castlingP.col == 7) {
+				castlingP.col -= 2;
+			}
+			// update x position
+			castlingP.x = castlingP.getX(castlingP.col);
+		}
+	}
+	
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 
