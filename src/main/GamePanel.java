@@ -3,8 +3,10 @@ package main;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
@@ -150,9 +152,10 @@ public class GamePanel extends JPanel {
 			if (activeP != null) {
 				if (isValidSquare) {
 					// MOVE CONFIRMED
-					// Update the piece list in case a piece has been captured and removed during the simulation
+					// Update the piece list in case a piece has been captured and removed during
+					// the simulation
 					copyPieces(simPieces, pieces);
-					activeP.updatePosition();					
+					activeP.updatePosition();
 					changePlayer();
 				} else {
 					// The move is not valid so reset everything
@@ -177,7 +180,7 @@ public class GamePanel extends JPanel {
 
 		canMove = false;
 		isValidSquare = false;
-		
+
 		// Reset the piece list in every loop
 		// This is basically for restoring the removed piece during the simulation
 		copyPieces(pieces, simPieces);
@@ -191,12 +194,12 @@ public class GamePanel extends JPanel {
 		// Check if the piece is hovering over a reachable square
 		if (activeP.canMove(activeP.col, activeP.row)) {
 			canMove = true;
-			
+
 			// if hitting a piece, remove it from the list
 			if (activeP.hittingP != null) {
 				simPieces.remove(activeP.hittingP);
 			}
-			
+
 			isValidSquare = true;
 		}
 	}
@@ -225,6 +228,17 @@ public class GamePanel extends JPanel {
 			// Draw the active piece in the end so it won't be hidden by board or colored
 			// square
 			activeP.draw(g2d);
+		}
+
+		// Status messages
+		g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		g2d.setFont(new Font("Book Antiqua", Font.PLAIN, 40));
+		g2d.setColor(Color.white);
+		
+		if (currentColor == WHITE) {
+			g2d.drawString("White's turn", 840, 550);
+		} else {
+			g2d.drawString("Black's turn", 840, 250);
 		}
 	}
 
