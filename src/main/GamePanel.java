@@ -217,8 +217,20 @@ public class GamePanel extends JPanel {
 	private void changePlayer() {
 		if (currentColor == WHITE) {
 			currentColor = BLACK;
+			// Reset black's two stepped status
+			for (Piece p : pieces) {
+				if (p.color == BLACK) {
+					p.twoStepped = false;
+				}
+			}
 		} else {
 			currentColor = WHITE;
+			// Reset black's two stepped status
+			for (Piece p : pieces) {
+				if (p.color == WHITE) {
+					p.twoStepped = false;
+				}
+			}
 		}
 		activeP = null;
 	}
