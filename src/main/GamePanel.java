@@ -33,7 +33,7 @@ public class GamePanel extends JPanel {
 	public static ArrayList<Piece> pieces = new ArrayList<>();
 	public static ArrayList<Piece> simPieces = new ArrayList<>();
 	ArrayList<Piece> promoPieces = new ArrayList<>();
-	Piece activeP;
+	Piece activeP, checkingP;
 	public static Piece castlingP;
 
 	// COLOR
@@ -45,7 +45,8 @@ public class GamePanel extends JPanel {
 	boolean isValidSquare;
 	boolean canMove;
 	boolean promotion;
-
+	boolean gameover;
+	
 	GamePanel() {
 		setPreferredSize(new Dimension(WIDTH, HEIGHT));
 		setBackground(Color.black);
@@ -168,12 +169,23 @@ public class GamePanel extends JPanel {
 						if (castlingP != null) {
 							castlingP.updatePosition();
 						}
-
-						if (canPromote()) {
-							promotion = true;
+						
+						if (isKingInCheck()) {
+							// TODO: possibly game over
+							if (canPromote()) {
+								promotion = true;
+							} else {
+								changePlayer();
+							}
 						} else {
-							changePlayer();
+							
+							if (canPromote()) {
+								promotion = true;
+							} else {
+								changePlayer();
+							}
 						}
+
 
 					} else {
 						// The move is not valid so reset everything
@@ -219,7 +231,10 @@ public class GamePanel extends JPanel {
 
 			checkCastling();
 
-			isValidSquare = true;
+			if (!isIllegal(activeP) && !opponentCanCaptureKing()) {
+				isValidSquare = true;
+			}
+
 		}
 	}
 
@@ -243,6 +258,63 @@ public class GamePanel extends JPanel {
 		}
 		activeP = null;
 	}
+
+	private boolean isIllegal(Piece king) {
+		if (king.type == Type.KING) {
+			for (Piece p : simPieces) {
+				if (p != king && p.color != king.color && p.canMove(king.col, king.row)) {
+					return true;
+				}
+				;
+			}
+		}
+		return false;
+	}
+	
+	private boolean opponentCanCaptureKing() {
+		
+		Piece king = getKing(false);
+		
+		for (Piece p : simPieces) {
+			if (p.color != king.color && p.canMove(king.col, king.row)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	private boolean isKingInCheck() {
+		
+		Piece king = getKing(true);
+		
+		if (activeP.canMove(king.col, king.row)) {
+			checkingP = activeP;
+			return true;
+		} else {
+			checkingP = null;
+		}
+		
+		return false;
+	}
+	
+	private Piece getKing(boolean opponent) {
+		Piece king = null;
+		
+		for (Piece p : simPieces) {
+			if (opponent) {
+				if (p.type == Type.KING && p.color != currentColor) {
+					king = p;
+				}
+			} else {
+				if (p.type == Type.KING && p.color == currentColor) {
+					king = p;
+				}
+			}
+		}
+		
+		return king;
+	}
+
 
 	private void checkCastling() {
 		if (castlingP != null) {
@@ -275,13 +347,22 @@ public class GamePanel extends JPanel {
 	private void promoting() {
 		if (mouse.pressed) {
 			for (Piece p : promoPieces) {
-				if (p.col == mouse.x/Board.SQUARE_SIZE && p.row == mouse.y / Board.SQUARE_SIZE) {
+				if (p.col == mouse.x / Board.SQUARE_SIZE && p.row == mouse.y / Board.SQUARE_SIZE) {
 					switch (p.type) {
-					case ROOK: simPieces.add(new Rook(currentColor, activeP.col, activeP.row)); break;
-					case KNIGHT: simPieces.add(new Knight(currentColor, activeP.col, activeP.row)); break;
-					case BISHOP: simPieces.add(new Bishop(currentColor, activeP.col, activeP.row)); break;
-					case QUEEN: simPieces.add(new Queen(currentColor, activeP.col, activeP.row)); break;
-					default: break;
+					case ROOK:
+						simPieces.add(new Rook(currentColor, activeP.col, activeP.row));
+						break;
+					case KNIGHT:
+						simPieces.add(new Knight(currentColor, activeP.col, activeP.row));
+						break;
+					case BISHOP:
+						simPieces.add(new Bishop(currentColor, activeP.col, activeP.row));
+						break;
+					case QUEEN:
+						simPieces.add(new Queen(currentColor, activeP.col, activeP.row));
+						break;
+					default:
+						break;
 					}
 					simPieces.remove(activeP);
 					copyPieces(simPieces, pieces);
@@ -308,11 +389,19 @@ public class GamePanel extends JPanel {
 
 		if (activeP != null) {
 			if (canMove) {
-				g2d.setColor(Color.white);
-				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-				g2d.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE,
-						Board.SQUARE_SIZE);
-				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+				if (isIllegal(activeP) || opponentCanCaptureKing()) {
+					g2d.setColor(Color.gray);
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+					g2d.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE,
+							Board.SQUARE_SIZE);
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+				} else {
+					g2d.setColor(Color.white);
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+					g2d.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE,
+							Board.SQUARE_SIZE);
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+				}
 			}
 			// Draw the active piece in the end so it won't be hidden by board or colored
 			// square
@@ -333,8 +422,18 @@ public class GamePanel extends JPanel {
 
 			if (currentColor == WHITE) {
 				g2d.drawString("White's turn", 840, 550);
+				if (checkingP != null && checkingP.color == BLACK) {
+					g2d.setColor(Color.red);
+					g2d.drawString("The King", 840, 650);
+					g2d.drawString("is in check!", 840, 700);
+				}
 			} else {
 				g2d.drawString("Black's turn", 840, 250);
+				if (checkingP != null && checkingP.color == WHITE) {
+					g2d.setColor(Color.red);
+					g2d.drawString("The King", 840, 100);
+					g2d.drawString("is in check!", 840, 150);
+				}
 			}
 		}
 	}
