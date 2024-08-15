@@ -45,6 +45,7 @@ public class GamePanel extends JPanel {
 	boolean isValidSquare;
 	boolean canMove;
 	boolean promotion;
+	boolean stalemate;
 	boolean gameover;
 
 	GamePanel() {
@@ -136,7 +137,7 @@ public class GamePanel extends JPanel {
 
 		if (promotion) {
 			promoting();
-		} else if (!gameover){
+		} else if (!gameover && !stalemate) {
 			// Mouse button pressed
 			if (mouse.pressed) {
 				if (activeP == null) {
@@ -172,6 +173,8 @@ public class GamePanel extends JPanel {
 
 						if (isKingInCheck() && isCheckmate()) {
 							gameover = true;
+						} else if (isStalemate()) {
+							stalemate = true;
 						} else {
 							// The game is still going on
 							if (canPromote()) {
@@ -310,6 +313,26 @@ public class GamePanel extends JPanel {
 		return king;
 	}
 
+	private boolean isStalemate() {
+		int count = 0;
+		// Count the number of pieces
+		// Stalemate happends only when one piece is left which is king
+		for (Piece p : simPieces) {
+			if (p.color != currentColor) {
+				count++;
+			}
+		}
+
+		// If count is 1 - only king is left
+		if (count == 1) {
+			if (!kingCanMove(getKing(true))) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	private boolean isCheckmate() {
 
 		Piece king = getKing(true); // get the opponent king
@@ -376,39 +399,41 @@ public class GamePanel extends JPanel {
 					// The checking piece is above the king
 					if (checkingP.col < king.col) {
 						// The checking piece is in the upper left
-						
+
 						for (int col = checkingP.col, row = checkingP.row; col < king.col; col++, row++) {
 							for (Piece p : simPieces) {
 								if (p != king && p.color != currentColor && p.canMove(col, row)) {
 									return false;
-								};
+								}
+								;
 							}
 						}
 					}
 					if (checkingP.col > king.col) {
 						// The checking piece is in the upper right
-						
+
 						for (int col = checkingP.col, row = checkingP.row; col > king.col; col--, row++) {
 							for (Piece p : simPieces) {
 								if (p != king && p.color != currentColor && p.canMove(col, row)) {
 									return false;
-								};
+								}
+								;
 							}
 						}
 					}
 				}
-				
-				
+
 				if (checkingP.row > king.row) {
 					// The checking piece is below the king
 					if (checkingP.col < king.col) {
 						// The checking piece is in the lower left
-						
+
 						for (int col = checkingP.col, row = checkingP.row; col < king.col; col++, row--) {
 							for (Piece p : simPieces) {
 								if (p != king && p.color != currentColor && p.canMove(col, row)) {
 									return false;
-								};
+								}
+								;
 							}
 						}
 					}
@@ -418,7 +443,8 @@ public class GamePanel extends JPanel {
 							for (Piece p : simPieces) {
 								if (p != king && p.color != currentColor && p.canMove(col, row)) {
 									return false;
-								};
+								}
+								;
 							}
 						}
 					}
@@ -598,7 +624,7 @@ public class GamePanel extends JPanel {
 				}
 			}
 		}
-		
+
 		if (gameover) {
 			String s = "";
 			if (currentColor == WHITE) {
@@ -608,6 +634,12 @@ public class GamePanel extends JPanel {
 			}
 			g2d.setFont(new Font("Arial", Font.PLAIN, 90));
 			g2d.setColor(Color.green);
+			g2d.drawString(s, 200, 400);
+		}
+		if (stalemate) {
+			String s = "Stalemate";
+			g2d.setFont(new Font("Arial", Font.PLAIN, 90));
+			g2d.setColor(Color.gray);
 			g2d.drawString(s, 200, 400);
 		}
 	}
