@@ -7,8 +7,17 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JPanel;
 
 import piece.Bishop;
@@ -39,7 +48,7 @@ public class GamePanel extends JPanel {
 	// COLOR
 	public static final int WHITE = 0;
 	public static final int BLACK = 1;
-	int currentColor = WHITE;
+	public static int currentColor = WHITE;
 
 	// BOOLEANS
 	boolean isValidSquare;
@@ -164,20 +173,30 @@ public class GamePanel extends JPanel {
 
 						// Update the piece list in case a piece has been captured and removed during
 						// the simulation
-						copyPieces(simPieces, pieces);
-						activeP.updatePosition();
+						if (simPieces.size() != pieces.size()) {
+							playSound("src/sounds/capture.wav");
+							copyPieces(simPieces, pieces);
+							activeP.updatePosition();
+						} else {
+							playSound("src/sounds/move.wav");
+							activeP.updatePosition();
+						}
 
 						if (castlingP != null) {
+							playSound("src/sounds/castling.wav");
 							castlingP.updatePosition();
 						}
 
 						if (isKingInCheck() && isCheckmate()) {
+							playSound("src/sounds/checkmate.wav");
 							gameover = true;
 						} else if (isStalemate()) {
+							playSound("src/sounds/checkmate.wav");
 							stalemate = true;
 						} else {
 							// The game is still going on
 							if (canPromote()) {
+								playSound("src/sounds/promote.wav");
 								promotion = true;
 							} else {
 								changePlayer();
@@ -340,7 +359,7 @@ public class GamePanel extends JPanel {
 		if (kingCanMove(king)) {
 			return false;
 		} else {
-			// But you still have a change
+			// But you still have a chance
 			// Check if can block the attack with your piece
 
 			// Check the position of the checking piece and the king in check
@@ -642,6 +661,34 @@ public class GamePanel extends JPanel {
 			g2d.setColor(Color.gray);
 			g2d.drawString(s, 200, 400);
 		}
+	}
+	
+	public static void playSound(String filePath) {
+		try {
+			File soundFile = new File(filePath);
+			AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundFile);
+			
+			AudioFormat format = audioStream.getFormat();
+			DataLine.Info info = new DataLine.Info(Clip.class, format);
+			
+			Clip audioClip = (Clip) AudioSystem.getLine(info);
+			
+			audioClip.open(audioStream);
+			audioClip.start();
+			
+            // Umožnění přehrání audia (blokování hlavního vlákna, dokud zvuk nedohraje)
+            while (!audioClip.isRunning())
+                Thread.sleep(5);
+            while (audioClip.isRunning())
+                Thread.sleep(10);
+
+            // Uzavření zdrojů
+            audioClip.close();
+            audioStream.close();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException | InterruptedException e) {
+            e.printStackTrace();
+        }
+			
 	}
 
 }
